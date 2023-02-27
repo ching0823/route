@@ -7,7 +7,10 @@
 #include <windows.h>
 #include <wincon.h>
 
-#define MAXSTATION 122
+#define MAXSTATION 121+1
+#define MAXLINE 10+1
+#define MAXLINENAME 50
+#define MAXLINECHNAME 30
 #define MAXFILESTRING 300
 #define MAXSTATIONNAME 30
 #define MAXSTATIONCHNAME 40
@@ -16,8 +19,17 @@
 struct st_station {
     char name[MAXSTATIONNAME];
     char chineseName[MAXSTATIONCHNAME];
+    int line;
 };
 struct st_station st[MAXSTATION];
+
+struct st_line {
+    char abbrev[4];
+    char name[MAXLINENAME];
+    char chineseName[MAXLINECHNAME];
+    int rgb;
+};
+struct st_line line[MAXLINE];
 
 double graph[MAXSTATION][MAXSTATION]= {0};
 bool showSearchScore=false; //input '*' at last digit to show search algorithm weighting
@@ -76,6 +88,8 @@ void dijkstra() {
         }
         count++;
     }
+
+    reverseDijkstra(); //Reverse the inverted dijkstra result map
     return;
 }
 
@@ -94,13 +108,23 @@ void printFullDijkstra() {
     return;
 }
 
-void printDijkstra() {
-
+void dijkstraResult() {
+    int i=1;
+    int lineNum=0;
+    printf("\n");
+    while(reversePrev[i]>0) {
+        printf("| %3i | %-20s \n",reversePrev[i],st[reversePrev[i]].name);
+        i++;
+    }
+    printf("| %3i | %-20s \n",des,st[des].name);
+    printf("\n");
+    system("pause");
+    return;
 }
 
 void reverseDijkstra() {
     int prevTemp[MAXSTATION];
-    for(int i=0; i<MAXSTATION; i++){
+    for(int i=0; i<MAXSTATION; i++) {
         reversePrev[i]=0;
         prevTemp[i]=0;
     }
@@ -109,25 +133,34 @@ void reverseDijkstra() {
     //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count]].name);
     count++;
 
-    while(prevTemp[count-1]>0){
+    while(prevTemp[count-1]>0) {
         prevTemp[count] = prev[prevTemp[count-1]];
         //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count-1]].name);
         count++;
     }
-
+    for(int i=1; i<count; i++) {
+        reversePrev[i]=prevTemp[count-i-1];
+    }
+    //Print prevTemp[];
+    /*
     printf("Destination: %3i | %-20s \n",des,st[des].name);
     for(int i=0; i<count; i++){
         printf("prevTemp[%2i]=%3i | %-20s \n",i,prevTemp[i],st[prevTemp[i]].name);
     }
     system("pause");
+    */
+
+    return;
 }
 
 void initInterchange() {
 
 }
 
-int userInput() {
+void userInput() {
     ori=des=0;
+
+    printInstructions();
     do {
         printf("\nPlease Select Origin: ");
         ori=inputAndSearch();
@@ -147,6 +180,11 @@ int userInput() {
             return;
         } else registerConfirm(des);
     } while(des==0);
+}
+
+void printInstructions() {
+    printf("\n--- Input ID or English name of the station ---\n");
+    printf("Note: Ambiguous name triggers search function\n");
 }
 
 void registerConfirm(int i) {
@@ -302,7 +340,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         for(i=0; i<MAXSTATION; i++) {
             if(matchScore[i]==topScore) resultCount++;
         }
-        printf("\nPlease Select Station Below:\n\n");
+        printf("\nDo you mean by:\n\n");
         if(resultCount<2) {
             for(i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore) {
@@ -344,7 +382,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 
 int inputCode() {
     printf("\nInput ");
-    printf("Code");
+    printf("ID");
     printf(" Of Station: ");
     int i=0;
     char ch, input[4]= {0};
@@ -371,7 +409,7 @@ void printStationChoose(int i) {
     return;
 }
 
-int graphFileInput() {
+int fileGraphInput() {
     FILE *fp;
     int i,j=0; //file row and col counter
     char s[MAXFILESTRING]="";
@@ -402,7 +440,7 @@ int graphFileInput() {
     return 0;
 }
 
-int stationFileInput() {
+int fileStationInput() {
     FILE *fp;
     int i=0; //file row and col counter
     char s[MAXFILESTRING];
@@ -427,13 +465,15 @@ int stationFileInput() {
         strcpy(st[i].name,token);
         token=strtok(NULL,csv);
         strcpy(st[i].chineseName,token);
+        token=strtok(NULL,csv);
+        st[i].line=atoi(token);
         i++;
     }
     fclose(fp);
     return 0;
 }
 
-int interchangeFileInput() {
+int fileInterchangeInput() {
     FILE *fp;
     int i=0; //file row and col counter
     char s[MAXFILESTRING];
@@ -460,6 +500,39 @@ int interchangeFileInput() {
     return 0;
 }
 
+int fileLineInput() {
+    FILE *fp;
+    int i=0; //file row and col counter
+    char s[MAXFILESTRING];
+    char const csv[2]=",";
+    char *token;
+    fp=fopen("line.csv","r");
+    if(fp==NULL) {
+        rgb(79);
+        printf("File \"line.csv\" Not Found\n");
+        rgb(7);
+        return 1;
+    }
+    fgets(s,MAXFILESTRING,fp); //get rid of first line of utf8 bom csv
+    i=1;
+    while(!feof(fp)) {
+        fgets(s,MAXFILESTRING,fp);
+        if(feof(fp)) break;
+        s[strlen(s)-1]=0;
+        //printf("%s\n",s);
+        token=strtok(s,csv);
+        //printf("Token:%s\t",token);
+        strcpy(line[i].abbrev,token);
+        token=strtok(NULL,csv);
+        strcpy(line[i].name,token);
+        token=strtok(NULL,csv);
+        strcpy(line[i].chineseName,token);
+        i++;
+    }
+    fclose(fp);
+    return 0;
+}
+
 void printGraph() {
     for(int i=0; i<MAXSTATION; i++) {
         for(int j=0; j<MAXSTATION; j++)
@@ -471,7 +544,22 @@ void printGraph() {
 }
 
 void printStructStation() {
-    for(int i=0; i<MAXSTATION; i++) printf(" %03i | %-20s | %s |\n", i, st[i].name, st[i].chineseName);
+    for(int i=0; i<MAXSTATION; i++) {
+        printf("| %3i | %-20s | ", i, st[i].name);
+        printf("%s", st[i].chineseName);
+        for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
+        printf("|\n");
+    }
+    return;
+}
+
+void printLine(){
+    for(int i=1; i<MAXLINE; i++){
+        printf("| %2i | %3s | %-30s | ",i,line[i].abbrev,line[i].name);
+        printf("%s", line[i].chineseName);
+        for(int j=strlen(line[i].chineseName); j<=18; j=j+3) printf("  ");
+        printf("|\n");
+    }
     return;
 }
 
@@ -492,14 +580,25 @@ void rgbPrintAll() {
     return;
 }
 
+void termsAndAgreement() {
+    printf("\n");
+    printf("This program is not for commercial use.\n");
+    printf("All copyright belongs to MTR.\n");
+    printf("\n");
+    printf("Press Y to proceed.\n");
+    while (getch()!='y') {}
+    system("cls");
+}
+
 void main() {
     system("chcp 65001");
     system("cls");
 
     int checkFile=0;
-    checkFile+=graphFileInput();
-    checkFile+=stationFileInput();
-    checkFile+=interchangeFileInput();
+    checkFile+=fileGraphInput();
+    checkFile+=fileStationInput();
+    checkFile+=fileInterchangeInput();
+    checkFile+=fileLineInput();
     if(checkFile>0) {
         system("pause>nul");
         exit(0);
@@ -508,15 +607,18 @@ void main() {
     //printStructStation();
     //printGraph();
     //printInterchange();
+    //printLine();
 
     //initInterchange();
 
+    //termsAndAgreement();
+
     do {
+        printStructStation();
         userInput();
         dijkstra();
-        reverseDijkstra();
-        printFullDijkstra();
-        printDijkstra();
+        //printFullDijkstra();
+        dijkstraResult();
         system("cls");
     } while(1);
 }
