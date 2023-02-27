@@ -1,4 +1,7 @@
-//v1.0 Dijkstra implementation
+/*
+v1.1 Interchange overhaul
+v1.0 Dijkstra implementation
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -14,12 +17,14 @@
 #define MAXFILESTRING 300
 #define MAXSTATIONNAME 30
 #define MAXSTATIONCHNAME 40
+#define INTERCHANGECOUNT 21+1
 #define INF 9999
 
 struct st_station {
     char name[MAXSTATIONNAME];
     char chineseName[MAXSTATIONCHNAME];
     int line;
+    int interchange;
 };
 struct st_station st[MAXSTATION];
 
@@ -33,7 +38,6 @@ struct st_line line[MAXLINE];
 
 double graph[MAXSTATION][MAXSTATION]= {0};
 bool showSearchScore=false; //input '*' at last digit to show search algorithm weighting
-int interchange[MAXSTATION]= {0}; //station is a transfer station
 
 double dist[MAXSTATION];
 int prev[MAXSTATION];
@@ -41,7 +45,7 @@ int reversePrev[MAXSTATION];
 
 int ori, des = 0;
 
-void dijkstra() {
+void dijkstra(int ori) {
     int min, target, count=0;
     int visit[MAXSTATION];
     double cost[MAXSTATION][MAXSTATION]= {0};
@@ -88,8 +92,58 @@ void dijkstra() {
         }
         count++;
     }
+    return;
+}
 
-    reverseDijkstra(); //Reverse the inverted dijkstra result map
+void checkInterchange() {
+    int tempDist=INF, tempOri, tempDes;
+    dijkstra(ori);
+
+    if(st[ori].interchange==0 && st[des].interchange==0) return;
+
+    if(st[ori].interchange!=0){
+        for(int i=0; i<MAXSTATION; i++){
+            if(st[ori].interchange==st[i].interchange){
+                dijkstra(i);
+                if(dist[des]<tempDist){
+                    tempOri=i;
+                    tempDist=dist[des];
+                }
+            }
+        }
+        ori=tempOri;
+    }
+    tempDist=INF;
+    if(st[des].interchange!=0){
+        for(int i=0; i<MAXSTATION; i++){
+            if(st[des].interchange==st[i].interchange){
+                if(dist[i]<tempDist){
+                    tempDes=i;
+                    tempDist=dist[i];
+                }
+            }
+        }
+        des=tempDes;
+    }
+    dijkstra(ori);
+    return;
+}
+
+void dijkstraResult() {
+    int i=1;
+    int currentLine=st[reversePrev[i]].line;
+    printf("\n");
+    while(reversePrev[i]>0) {
+        if(currentLine!=st[reversePrev[i]].line) {
+            printf("\n");
+            currentLine=st[reversePrev[i]].line;
+        }
+        printf("| %3i | %-20s \n",reversePrev[i],st[reversePrev[i]].name);
+        i++;
+    }
+    printf("| %3i | %-20s \n",des,st[des].name);
+    printf("\n");
+    system("pause");
     return;
 }
 
@@ -105,20 +159,6 @@ void printFullDijkstra() {
     }
     puts("");
     system("pause>nul");
-    return;
-}
-
-void dijkstraResult() {
-    int i=1;
-    int lineNum=0;
-    printf("\n");
-    while(reversePrev[i]>0) {
-        printf("| %3i | %-20s \n",reversePrev[i],st[reversePrev[i]].name);
-        i++;
-    }
-    printf("| %3i | %-20s \n",des,st[des].name);
-    printf("\n");
-    system("pause");
     return;
 }
 
@@ -141,6 +181,7 @@ void reverseDijkstra() {
     for(int i=1; i<count; i++) {
         reversePrev[i]=prevTemp[count-i-1];
     }
+
     //Print prevTemp[];
     /*
     printf("Destination: %3i | %-20s \n",des,st[des].name);
@@ -151,10 +192,6 @@ void reverseDijkstra() {
     */
 
     return;
-}
-
-void initInterchange() {
-
 }
 
 void userInput() {
@@ -358,9 +395,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
             int check[MAXSTATION]= {0}; //check[] stores interchange id
             for(i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore) {
-                    if(interchange[i]!=0) {
-                        if(check[interchange[i]]==0) {
-                            check[interchange[i]]=1;
+                    if(st[i].interchange!=0) {
+                        if(check[st[i].interchange]==0) {
+                            check[st[i].interchange]=1;
                             printStationChoose(i);
                         }
                     } else {
@@ -467,33 +504,8 @@ int fileStationInput() {
         strcpy(st[i].chineseName,token);
         token=strtok(NULL,csv);
         st[i].line=atoi(token);
-        i++;
-    }
-    fclose(fp);
-    return 0;
-}
-
-int fileInterchangeInput() {
-    FILE *fp;
-    int i=0; //file row and col counter
-    char s[MAXFILESTRING];
-    char const csv[2]=",";
-    char *token;
-    fp=fopen("interchange.csv","r");
-    if(fp==NULL) {
-        rgb(79);
-        printf("File \"interchange.csv\" Not Found\n");
-        rgb(7);
-        return 1;
-    }
-    while(!feof(fp)) {
-        fgets(s,MAXFILESTRING,fp);
-        if(feof(fp)) break;
-        s[strlen(s)-1]=0;
-        //printf("%s\n",s);
-        token=strtok(s,csv);
-        //printf("Token:%s\t",token);
-        interchange[i]=atoi(token);
+        token=strtok(NULL,csv);
+        st[i].interchange=atoi(token);
         i++;
     }
     fclose(fp);
@@ -534,6 +546,7 @@ int fileLineInput() {
 }
 
 void printGraph() {
+    printf("\n");
     for(int i=0; i<MAXSTATION; i++) {
         for(int j=0; j<MAXSTATION; j++)
             printf("%2.1f ", graph[i][j]);
@@ -544,17 +557,26 @@ void printGraph() {
 }
 
 void printStructStation() {
-    for(int i=0; i<MAXSTATION; i++) {
+    int currentLine=1;
+    printf("\n");
+    for(int i=1; i<MAXSTATION; i++) {
+        if(st[i].line!=currentLine) {
+            printf("|\n");
+            currentLine=st[i].line;
+        }
         printf("| %3i | %-20s | ", i, st[i].name);
         printf("%s", st[i].chineseName);
         for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
+        printf("| %s",line[st[i].line].chineseName);
+        for(int j=strlen(line[st[i].line].chineseName); j<=12; j=j+3) printf("  ");
         printf("|\n");
     }
     return;
 }
 
-void printLine(){
-    for(int i=1; i<MAXLINE; i++){
+void printLine() {
+    printf("\n");
+    for(int i=1; i<MAXLINE; i++) {
         printf("| %2i | %3s | %-30s | ",i,line[i].abbrev,line[i].name);
         printf("%s", line[i].chineseName);
         for(int j=strlen(line[i].chineseName); j<=18; j=j+3) printf("  ");
@@ -564,7 +586,20 @@ void printLine(){
 }
 
 void printInterchange() {
-    for (int i=0; i<MAXSTATION; i++) printf(" %03i | %02i |\n", i, interchange[i]);
+    printf("\n");
+    for(int i=1; i<MAXSTATION; i++) printf("| %03i | %02i |\n", i, st[i].interchange);
+    printf("\n");
+
+    int check[30]= {0};
+    printf("\n");
+    for(int i=1; i<MAXSTATION; i++) {
+        if(st[i].interchange>0)
+            if(check[st[i].interchange]==0) {
+                printf("| %2i | %-30s \n",st[i].interchange,st[i].name);
+                check[st[i].interchange]=1;
+            }
+    }
+    printf("\n");
 }
 
 void rgb(int color) {  //Set Display Colors
@@ -593,11 +628,12 @@ void termsAndAgreement() {
 void main() {
     system("chcp 65001");
     system("cls");
+    Sleep(50);
+    //termsAndAgreement();
 
     int checkFile=0;
     checkFile+=fileGraphInput();
     checkFile+=fileStationInput();
-    checkFile+=fileInterchangeInput();
     checkFile+=fileLineInput();
     if(checkFile>0) {
         system("pause>nul");
@@ -609,15 +645,12 @@ void main() {
     //printInterchange();
     //printLine();
 
-    //initInterchange();
-
-    //termsAndAgreement();
-
     do {
         printStructStation();
         userInput();
-        dijkstra();
+        checkInterchange();
         //printFullDijkstra();
+        reverseDijkstra(); //Reverse the inverted dijkstra result map
         dijkstraResult();
         system("cls");
     } while(1);
