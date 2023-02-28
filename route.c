@@ -1,5 +1,5 @@
 /*
-v2.0 Fully functional [ath finding system
+v2.0 Fully functional path finding system
 v1.1 Interchange overhaul
 v1.0 Dijkstra implementation
 */
