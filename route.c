@@ -33,7 +33,7 @@ struct st_line {
     char abbrev[4];
     char name[MAXLINENAME];
     char chineseName[MAXLINECHNAME];
-    int rgb;
+    //int rgb;
 };
 struct st_line line[MAXLINE];
 
@@ -56,13 +56,6 @@ void dijkstra(int ori) {
             if(graph[i][j]==0) cost[i][j]=INF;
             else cost[i][j]=graph[i][j];
     }
-    /*
-    for(int i=0; i<MAXSTATION; i++) {
-        for(int j=0; j<MAXSTATION; j++)
-            printf("%.0f ",cost[i][j]);
-        printf("\n");
-    }
-    */
 
     for(int i=0; i<MAXSTATION; i++) { //init
         visit[i]=0;
@@ -74,7 +67,7 @@ void dijkstra(int ori) {
     visit[ori]=1;
     count=1;
 
-    while(count<MAXSTATION) {
+    while(count<MAXSTATION) { //pick smallest dist[i]
         min=INF;
         for(int i=1; i<MAXSTATION; i++) {
             if(visit[i]==0 && min>dist[i]) {
@@ -86,7 +79,7 @@ void dijkstra(int ori) {
 
         for(int i=1; i<MAXSTATION; i++) {
             //printf("i: %i| count: %i| prev: %i| dist: %.0f| target: %i\n",i,count,prev[i],dist[i],target);
-            if(visit[i]==0 && min+cost[target][i] < dist[i]) {
+            if(visit[i]==0 && min+cost[target][i] < dist[i]) { //change dist[i] to calculated new dist if smaller than original
                 dist[i]=min+cost[target][i];
                 prev[i]=target;
             }
@@ -98,11 +91,12 @@ void dijkstra(int ori) {
 
 void checkInterchange() {
     int tempDist=INF, tempOri, tempDes;
+
     dijkstra(ori);
 
     if(st[ori].interchange==0 && st[des].interchange==0) return;
 
-    if(st[des].interchange!=0){
+    if(st[des].interchange!=0){ //check des is interchange, swap between and pick closest
         for(int i=0; i<MAXSTATION; i++){
             if(st[des].interchange==st[i].interchange){
                 if(dist[i]<tempDist){
@@ -113,8 +107,9 @@ void checkInterchange() {
         }
         des=tempDes;
     }
+
     tempDist=INF;
-    if(st[ori].interchange!=0){
+    if(st[ori].interchange!=0){ //check ori is interchange, swap between and pick closest
         for(int i=0; i<MAXSTATION; i++){
             if(st[ori].interchange==st[i].interchange){
                 dijkstra(i);
@@ -129,7 +124,6 @@ void checkInterchange() {
 
     dijkstra(ori);
 
-    //if()
     return;
 }
 
@@ -196,7 +190,7 @@ void reverseDijkstra() {
         //printf("%i\n",reversePrev[i]);
     }
 
-    reversePrev[count]=des;
+    reversePrev[count]=des; //put des at final of reversePrev[]
 
     //Print prevTemp[];
     /*
@@ -256,9 +250,10 @@ void printInvaild() {
 
 int inputAndSearch() {
     char ch, inputString[MAXSTATIONNAME];
-    int i=0,check=0;
+    int i=0;
     showSearchScore=false;
-    while ((ch=getch())!=EOF && ch!='\n' && ch!='\r') {
+
+    while ((ch=getch())!=EOF && ch!='\n' && ch!='\r') { //input module
         if (ch==8 && i>0) {
             printf("\b \b");
             fflush(stdout);
@@ -270,17 +265,21 @@ int inputAndSearch() {
     }
     inputString[i]=0;
     puts("");
+
     if(strcmp(inputString,"q")==0) { //input "q" = quit program
         exit(0);
     }
+
     if(inputString[i-1]=='*') { //check last digit contains '*'
         showSearchScore=true;
         inputString[i-1]=0;
     }
+
+    int checkChar=0;
     for(i=0; i<strlen(inputString); i++) {
-        if(inputString[i]<'0' || inputString[i]>'9' ) check++;
+        if(inputString[i]<'0' || inputString[i]>'9' ) checkChar=1;
     }
-    if(check==0) {
+    if(checkChar==0) {
         i=atoi(inputString);
         if(i>0 && i<MAXSTATION) {
             return i; //return i = station id = input number valid
@@ -288,10 +287,12 @@ int inputAndSearch() {
             return 0;
         }
     } else {
-        if(strlen(inputString)<3 || !isalnum(inputString[0])) {
+        if(strlen(inputString)<3 || !isalnum(inputString[0])) { //word shorter than 3 byte is not valid
             return 0;
         }
-        i=identifyStation(inputString);
+
+        i=identifyStation(inputString); //throw string to search
+
         if(i==0) {
             return 0;
         } else {
@@ -310,13 +311,16 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         }
     }
     inputString[i-j]=0;
+
     for(i=0; i<strlen(inputString); i++) inputString[i]=toupper(inputString[i]);
     for(i=1; i<MAXSTATION; i++) {
         matchScore[i]=0;
         strcpy(name,st[i].name);
-        for(l=0; l<strlen(name); l++) {
+
+        for(l=0; l<strlen(name); l++) { //toupper name
             name[l]=toupper(name[l]);
         }
+
         for(j=0; j<strlen(inputString)-2; j++) {
             for(k=0; k<strlen(name)-2; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2]) {
@@ -333,13 +337,12 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
             }
         }
         name[m-j]=0;
-        for(l=0; l<strlen(name); l++) {
-            name[l]=toupper(name[l]);
-        }
-        if(strcmp(name,inputString)==0) {
+
+        if(strcmp(name,inputString)==0) { //if st[i].name==inputString
             return i;
         }
-        for(j=0; j<strlen(inputString); j++) {
+
+        for(j=0; j<strlen(inputString); j++) { //Score system
             for(k=0; k<strlen(name); k++) {
                 if(inputString[j]==name[k]) {
                     matchScore[i]++;
@@ -371,11 +374,11 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
                 }
             }
         }
-        if(showSearchScore==true) printf("\nS:%02i %s %i",i,st[i].name,matchScore[i]); //scores of match[i]
+        if(showSearchScore==true) printf("\nS:%02i %s %i",i,st[i].name,matchScore[i]); //input * at the end, show scores of match[i]
     }
 
     int topScore=0, secScore=0;
-    for(i=1; i<MAXSTATION; i++) {
+    for(i=1; i<MAXSTATION; i++) { //find topScore and secScore
         if(matchScore[i]>topScore) {
             secScore=topScore;
             topScore=matchScore[i];
@@ -383,7 +386,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
             secScore=matchScore[i];
         }
     }
-    if(showSearchScore==true) printf("\n\nHighest: %i Second: %i\n",topScore,secScore);
+
+    if(showSearchScore==true) printf("\n\nHighest: %i Second: %i\n",topScore,secScore); //input * at the end, show scores of match[i]
+
     if(topScore>8) {
         int resultCount=0;
         for(i=0; i<MAXSTATION; i++) {
@@ -502,6 +507,7 @@ int fileStationInput() {
         rgb(7);
         return 1;
     }
+
     fgets(s,MAXFILESTRING,fp); //get rid of first line of utf8 bom csv
     i=1;
     while(!feof(fp)) {
@@ -537,6 +543,7 @@ int fileLineInput() {
         rgb(7);
         return 1;
     }
+
     fgets(s,MAXFILESTRING,fp); //get rid of first line of utf8 bom csv
     i=1;
     while(!feof(fp)) {
