@@ -1,4 +1,5 @@
 /*
+v2.0 Fully functional [ath finding system
 v1.1 Interchange overhaul
 v1.0 Dijkstra implementation
 */
@@ -101,6 +102,18 @@ void checkInterchange() {
 
     if(st[ori].interchange==0 && st[des].interchange==0) return;
 
+    if(st[des].interchange!=0){
+        for(int i=0; i<MAXSTATION; i++){
+            if(st[des].interchange==st[i].interchange){
+                if(dist[i]<tempDist){
+                    tempDes=i;
+                    tempDist=dist[i];
+                }
+            }
+        }
+        des=tempDes;
+    }
+    tempDist=INF;
     if(st[ori].interchange!=0){
         for(int i=0; i<MAXSTATION; i++){
             if(st[ori].interchange==st[i].interchange){
@@ -113,19 +126,10 @@ void checkInterchange() {
         }
         ori=tempOri;
     }
-    tempDist=INF;
-    if(st[des].interchange!=0){
-        for(int i=0; i<MAXSTATION; i++){
-            if(st[des].interchange==st[i].interchange){
-                if(dist[i]<tempDist){
-                    tempDes=i;
-                    tempDist=dist[i];
-                }
-            }
-        }
-        des=tempDes;
-    }
+
     dijkstra(ori);
+
+    //if()
     return;
 }
 
@@ -138,10 +142,19 @@ void dijkstraResult() {
             printf("\n");
             currentLine=st[reversePrev[i]].line;
         }
-        printf("| %3i | %-20s \n",reversePrev[i],st[reversePrev[i]].name);
+        //printf("| %3i ",reversePrev[i]);
+        printf("| %-20s | ",st[reversePrev[i]].name);
+
+        printf("%s",st[reversePrev[i]].chineseName);
+        for(int j=strlen(st[reversePrev[i]].chineseName); j<=18; j=j+3) printf("  ");
+
+        printf("| %s",line[st[reversePrev[i]].line].chineseName);
+        for(int j=strlen(line[st[reversePrev[i]].line].chineseName); j<=12; j=j+3) printf("  ");
+
+        if(currentLine!=st[reversePrev[i+1]].line || currentLine!=st[reversePrev[i-1]].line || reversePrev[i]==des) printf("| Time: %3.0f mins ",dist[reversePrev[i]]);
+        printf("|\n");
         i++;
     }
-    printf("| %3i | %-20s \n",des,st[des].name);
     printf("\n");
     system("pause");
     return;
@@ -180,7 +193,10 @@ void reverseDijkstra() {
     }
     for(int i=1; i<count; i++) {
         reversePrev[i]=prevTemp[count-i-1];
+        //printf("%i\n",reversePrev[i]);
     }
+
+    reversePrev[count]=des;
 
     //Print prevTemp[];
     /*
@@ -201,22 +217,18 @@ void userInput() {
     do {
         printf("\nPlease Select Origin: ");
         ori=inputAndSearch();
-        if(ori==0) {
+        if(ori<=0) {
             printInvaild();
-        } else if(ori<0) {
-            return;
         } else registerConfirm(ori);
-    } while(ori==0);
+    } while(ori<=0);
 
     do {
         printf("\nPlease Select Destination: ");
         des=inputAndSearch();
-        if(des==0) {
+        if(des<=0) {
             printInvaild();
-        } else if(ori<0) {
-            return;
         } else registerConfirm(des);
-    } while(des==0);
+    } while(des<=0);
 }
 
 void printInstructions() {
@@ -259,7 +271,7 @@ int inputAndSearch() {
     inputString[i]=0;
     puts("");
     if(strcmp(inputString,"q")==0) { //input "q" = quit program
-        return -1;
+        exit(0);
     }
     if(inputString[i-1]=='*') { //check last digit contains '*'
         showSearchScore=true;
