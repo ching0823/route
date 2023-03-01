@@ -21,6 +21,9 @@ v1.0 Dijkstra implementation
 #define INTERCHANGECOUNT 21+1
 #define INF 9999
 
+#define SEARCHCOUNT 2
+#define DIJKSTRASLOT 0
+
 struct st_station {
     char name[MAXSTATIONNAME];
     char chineseName[MAXSTATIONCHNAME];
@@ -40,9 +43,9 @@ struct st_line line[MAXLINE];
 double graph[MAXSTATION][MAXSTATION]= {0};
 bool showSearchScore=false; //input '*' at last digit to show search algorithm weighting
 
-double dist[MAXSTATION];
-int prev[MAXSTATION];
-int reversePrev[MAXSTATION];
+double dist[SEARCHCOUNT][MAXSTATION];
+int prev[SEARCHCOUNT][MAXSTATION];
+int reversePrev[SEARCHCOUNT][MAXSTATION];
 
 int ori, des = 0;
 
@@ -59,11 +62,11 @@ void dijkstra(int ori) {
 
     for(int i=0; i<MAXSTATION; i++) { //init
         visit[i]=0;
-        dist[i]=cost[ori][i];
-        if(cost[ori][i]<INF) prev[i]=ori;
-        else prev[i]=-1;
+        dist[DIJKSTRASLOT][i]=cost[ori][i];
+        if(cost[ori][i]<INF) prev[DIJKSTRASLOT][i]=ori;
+        else prev[DIJKSTRASLOT][i]=-1;
     }
-    dist[ori]=0; //set ori as start
+    dist[DIJKSTRASLOT][ori]=0; //set ori as start
     visit[ori]=1;
     count=1;
 
@@ -71,7 +74,7 @@ void dijkstra(int ori) {
         min=INF;
         for(int i=1; i<MAXSTATION; i++) {
             if(visit[i]==0 && min>dist[i]) {
-                min=dist[i];
+                min=dist[DIJKSTRASLOT][i];
                 target=i;
             }
         }
@@ -79,9 +82,9 @@ void dijkstra(int ori) {
 
         for(int i=1; i<MAXSTATION; i++) {
             //printf("i: %i| count: %i| prev: %i| dist: %.0f| target: %i\n",i,count,prev[i],dist[i],target);
-            if(visit[i]==0 && min+cost[target][i] < dist[i]) { //change dist[i] to calculated new dist if smaller than original
-                dist[i]=min+cost[target][i];
-                prev[i]=target;
+            if(visit[i]==0 && min+cost[target][i] < dist[DIJKSTRASLOT][i]) { //change dist[i] to calculated new dist if smaller than original
+                dist[DIJKSTRASLOT][i]=min+cost[target][i];
+                prev[DIJKSTRASLOT][i]=target;
             }
         }
         count++;
@@ -96,10 +99,10 @@ void checkInterchange() {
 
     if(st[ori].interchange==0 && st[des].interchange==0) return;
 
-    if(st[des].interchange!=0){ //check des is interchange, swap between and pick closest
-        for(int i=0; i<MAXSTATION; i++){
-            if(st[des].interchange==st[i].interchange){
-                if(dist[i]<tempDist){
+    if(st[des].interchange!=0) { //check des is interchange, swap between and pick closest
+        for(int i=0; i<MAXSTATION; i++) {
+            if(st[des].interchange==st[i].interchange) {
+                if(dist[i]<tempDist) {
                     tempDes=i;
                     tempDist=dist[i];
                 }
@@ -109,11 +112,11 @@ void checkInterchange() {
     }
 
     tempDist=INF;
-    if(st[ori].interchange!=0){ //check ori is interchange, swap between and pick closest
-        for(int i=0; i<MAXSTATION; i++){
-            if(st[ori].interchange==st[i].interchange){
+    if(st[ori].interchange!=0) { //check ori is interchange, swap between and pick closest
+        for(int i=0; i<MAXSTATION; i++) {
+            if(st[ori].interchange==st[i].interchange) {
                 dijkstra(i);
-                if(dist[des]<tempDist){
+                if(dist[des]<tempDist) {
                     tempOri=i;
                     tempDist=dist[des];
                 }
@@ -129,23 +132,28 @@ void checkInterchange() {
 
 void dijkstraResult() {
     int i=1;
-    int currentLine=st[reversePrev[i]].line;
+    int currentLine=st[reversePrev[DIJKSTRASLOT][i]].line;
     printf("\n");
     while(reversePrev[i]>0) {
-        if(currentLine!=st[reversePrev[i]].line) {
+        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i]].line) {
             printf("\n");
-            currentLine=st[reversePrev[i]].line;
+            currentLine=st[reversePrev[DIJKSTRASLOT][i]].line;
         }
+        //printf("st[reversePrev[0]].line: %2i\n",st[reversePrev[0]].line);
         //printf("| %3i ",reversePrev[i]);
-        printf("| %-20s | ",st[reversePrev[i]].name);
+        printf("| %-20s | ",st[reversePrev[DIJKSTRASLOT][i]].name);
 
-        printf("%s",st[reversePrev[i]].chineseName);
-        for(int j=strlen(st[reversePrev[i]].chineseName); j<=18; j=j+3) printf("  ");
+        printf("%s",st[reversePrev[DIJKSTRASLOT][i]].chineseName);
+        for(int j=strlen(st[reversePrev[DIJKSTRASLOT][i]].chineseName); j<=18; j=j+3) printf("  ");
 
-        printf("| %s",line[st[reversePrev[i]].line].chineseName);
-        for(int j=strlen(line[st[reversePrev[i]].line].chineseName); j<=12; j=j+3) printf("  ");
+        printf("| %s",line[st[reversePrev[DIJKSTRASLOT][i]].line].chineseName);
+        for(int j=strlen(line[st[reversePrev[DIJKSTRASLOT][i]].line].chineseName); j<=12; j=j+3) printf("  ");
 
-        if(currentLine!=st[reversePrev[i+1]].line || currentLine!=st[reversePrev[i-1]].line || reversePrev[i]==des) printf("| Time: %3.0f mins ",dist[reversePrev[i]]);
+        int check1=0, check2=0, check3=0; //show time needed
+        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i+1]].line) check1=1; //last station before interchange, included first station, first st line=0, i=1
+        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i-1]].line) check2=1; //first station after interchange
+        if(reversePrev[DIJKSTRASLOT][i]==des) check3=1; //
+        if(check1 || check2 || check3) printf("| Time: %3.0f mins ",dist[reversePrev[DIJKSTRASLOT][i]]);
         printf("|\n");
         i++;
     }
@@ -156,15 +164,17 @@ void dijkstraResult() {
 
 void printFullDijkstra() {
     puts("");
-    for(int i=1; i<MAXSTATION; i++) {
-        printf(" %03i | %-20s | ", i, st[i].name);
-        printf("%s",st[i].chineseName);
-        for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
-        printf(" | prev: %3i | prev: %s",prev[i],st[prev[i]].chineseName);
-        for(int j=strlen(st[prev[i]].chineseName); j<=18; j=j+3) printf("  ");
-        printf("| dist: %5.1f |\n",dist[i]);
+    for(int slot=0; slot<SEARCHCOUNT; slot++) {
+        for(int i=1; i<MAXSTATION; i++) {
+            printf(" %03i | %-20s | ", i, st[i].name);
+            printf("%s",st[i].chineseName);
+            for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
+            printf(" | prev: %3i | prev: %s",prev[slot][i],st[prev[slot][i]].chineseName);
+            for(int j=strlen(st[prev[slot][i]].chineseName); j<=18; j=j+3) printf("  ");
+            printf("| dist: %5.1f |\n",dist[i]);
+        }
+        puts("");
     }
-    puts("");
     system("pause>nul");
     return;
 }
@@ -172,25 +182,25 @@ void printFullDijkstra() {
 void reverseDijkstra() {
     int prevTemp[MAXSTATION];
     for(int i=0; i<MAXSTATION; i++) {
-        reversePrev[i]=0;
+        reversePrev[DIJKSTRASLOT][i]=0;
         prevTemp[i]=0;
     }
     int count=0;
-    prevTemp[count]=prev[des];
+    prevTemp[count]=prev[DIJKSTRASLOT][des];
     //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count]].name);
     count++;
 
     while(prevTemp[count-1]>0) {
-        prevTemp[count] = prev[prevTemp[count-1]];
+        prevTemp[count] = prev[DIJKSTRASLOT][prevTemp[count-1]];
         //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count-1]].name);
         count++;
     }
     for(int i=1; i<count; i++) {
-        reversePrev[i]=prevTemp[count-i-1];
+        reversePrev[DIJKSTRASLOT][i]=prevTemp[count-i-1];
         //printf("%i\n",reversePrev[i]);
     }
 
-    reversePrev[count]=des; //put des at final of reversePrev[]
+    reversePrev[DIJKSTRASLOT][count]=des; //put des at final of reversePrev[]
 
     //Print prevTemp[];
     /*
@@ -226,6 +236,7 @@ void userInput() {
 }
 
 void printInstructions() {
+    printf("\nSelect font MS Gothic in command prompt for best result\n");
     printf("\n--- Input ID or English name of the station ---\n");
     printf("Note: Ambiguous name triggers search function\n");
 }
