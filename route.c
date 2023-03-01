@@ -44,9 +44,9 @@ struct st_line line[MAXLINE];
 double graph[MAXSTATION][MAXSTATION]= {0};
 bool showSearchScore=false; //input '*' at last digit to show search algorithm weighting
 
-double dist[SEARCHCOUNT][MAXSTATION]={0};
-int prev[SEARCHCOUNT][MAXSTATION]={0};
-int reversePrev[SEARCHCOUNT][MAXSTATION]={0};
+double dist[SEARCHCOUNT][MAXSTATION]= {0};
+int prev[SEARCHCOUNT][MAXSTATION]= {0};
+int reversePrev[SEARCHCOUNT][MAXSTATION]= {0};
 
 int ori, des = 0;
 
