@@ -362,8 +362,8 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         }
 
         //Score System
-        int alphabetCount[26]={0};
-        for(int j=0; j<strlen(name); j++){
+        int alphabetCount[26]= {0};
+        for(int j=0; j<strlen(name); j++) {
             alphabetCount[name[j]-65]=1;
         }
         /*
