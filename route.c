@@ -1,4 +1,5 @@
 /*
+v2.1 Search function bug fixed
 v2.0 Fully functional path finding system
 v1.1 Interchange overhaul
 v1.0 Dijkstra implementation
@@ -313,78 +314,90 @@ int inputAndSearch() {
 }
 
 int identifyStation(char inputString[MAXSTATIONNAME]) {
-    int i, j=0, k, l, m, matchScore[MAXSTATION]= {0}; //matchScore = array of weighting scores
+    int i, matchScore[MAXSTATION]= {0}; //matchScore = array of weighting scores
     char ch, name[MAXSTATIONNAME];
-    for(i=0; i<strlen(inputString); i++) { //Remove Space In char s;
-        if(inputString[i]==' ' || j>0) {
-            if(inputString[i]==' ') j++;
-            inputString[i-j+1]=inputString[i+1];
+
+    int nonSpaceCount=0;
+    for(i=0; inputString[i]!=0; i++) { //Remove Space In char inputString;
+        if(inputString[i]!=' ') {
+            inputString[nonSpaceCount] = inputString[i];
+            nonSpaceCount++;
         }
     }
-    inputString[i-j]=0;
+    inputString[nonSpaceCount]=0;
+    //printf("%s\n",inputString);
 
     for(i=0; i<strlen(inputString); i++) inputString[i]=toupper(inputString[i]);
+
     for(i=1; i<MAXSTATION; i++) {
         matchScore[i]=0;
         strcpy(name,st[i].name);
 
-        for(l=0; l<strlen(name); l++) { //toupper name
-            name[l]=toupper(name[l]);
+        for(int j=0; j<strlen(name); j++) { //toupper name
+            name[j]=toupper(name[j]);
         }
 
-        for(j=0; j<strlen(inputString)-2; j++) {
-            for(k=0; k<strlen(name)-2; k++) {
+        for(int j=0; j<strlen(inputString)-2; j++) {
+            for(int k=0; k<strlen(name)-2; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2]) {
                     matchScore[i]++;
                     break;
                 }
             }
         }
-        j=0;
-        for(m=0; m<strlen(name); m++) { //Remove Space In char name;
-            if(name[m]==' ' || j>0) {
-                if(name[m]==' ') j++;
-                name[m-j+1]=name[m+1];
+
+        nonSpaceCount=0;
+        for(int j=0; name[j]!=0 ; j++) { //Remove Space in name;
+            if(name[j]!=' ') {
+                name[nonSpaceCount]=name[j];
+                nonSpaceCount++;
             }
         }
-        name[m-j]=0;
+        name[nonSpaceCount]=0;
+        //printf("%s\n",name);
 
         if(strcmp(name,inputString)==0) { //if st[i].name==inputString
             return i;
         }
 
-        for(j=0; j<strlen(inputString); j++) { //Score system
-            for(k=0; k<strlen(name); k++) {
+        //Score System
+        int alphabetCount[26]={0};
+        for(int j=0; j<strlen(inputString); j++) {
+            for(int k=0; k<strlen(name); k++) {
                 if(inputString[j]==name[k]) {
                     matchScore[i]++;
                     break;
                 }
             }
         }
-        for(j=0; j<strlen(inputString)-1; j++) {
-            for(k=0; k<strlen(name)-1; k++) {
+
+        for(int j=0; j<strlen(inputString)-1; j++) {
+            for(int k=0; k<strlen(name)-1; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1]) {
                     matchScore[i]++;
                     break;
                 }
             }
         }
-        for(j=0; j<strlen(inputString)-2; j++) {
-            for(k=0; k<strlen(name)-2; k++) {
+
+        for(int j=0; j<strlen(inputString)-2; j++) {
+            for(int k=0; k<strlen(name)-2; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2]) {
                     matchScore[i]=matchScore[i]+3;
                     break;
                 }
             }
         }
-        for(j=0; j<strlen(inputString)-3; j++) {
-            for(k=0; k<strlen(name)-3; k++) {
+
+        for(int j=0; j<strlen(inputString)-3; j++) {
+            for(int k=0; k<strlen(name)-3; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2] && inputString[j+3]==name[k+3]) {
                     matchScore[i]=matchScore[i]+5;
                     break;
                 }
             }
         }
+
         if(showSearchScore==true) printf("\nS:%02i %s %i",i,st[i].name,matchScore[i]); //input * at the end, show scores of match[i]
     }
 
@@ -468,7 +481,7 @@ int inputCode() {
 
 void printStationChoose(int i) {
     rgb(14);
-    printf(" %03i",i);
+    printf(" %3i",i);
     rgb(7);
     printf(": %-20s | %s\n",st[i].name, st[i].chineseName);
     return;
