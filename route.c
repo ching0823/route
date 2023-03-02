@@ -456,7 +456,8 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
                 }
         }
 
-        int inputC=inputCode();
+        printf("\nPlease Select: ");
+        int inputC=inputAndSearch();
 
         if(inputC>0 && inputC<MAXSTATION) {
             return inputC;
