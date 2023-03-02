@@ -12,14 +12,14 @@ v1.0 Dijkstra implementation
 #include <windows.h>
 #include <wincon.h>
 
-#define MAXSTATION 128+1
+#define MAXSTATION 131+1
 #define MAXLINE 11+1
 #define MAXLINENAME 50
 #define MAXLINECHNAME 30
 #define MAXFILESTRING 300
 #define MAXSTATIONNAME 30
 #define MAXSTATIONCHNAME 40
-#define INTERCHANGECOUNT 23+1
+#define INTERCHANGECOUNT 25+1
 #define INF 9999
 
 #define SEARCHCOUNT 2
