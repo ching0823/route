@@ -278,6 +278,16 @@ int inputAndSearch() {
     inputString[i]=0;
     puts("");
 
+    int nonSpaceCount=0;
+    for(int i=0; inputString[i]!=0; i++) { //Remove Space In char inputString;
+        if(inputString[i]!=' ') {
+            inputString[nonSpaceCount] = inputString[i];
+            nonSpaceCount++;
+        }
+    }
+    inputString[nonSpaceCount]=0;
+    //printf("%s\n",inputString);
+
     if(strcmp(inputString,"q")==0) { //input "q" = quit program
         exit(0);
     }
@@ -317,16 +327,6 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
     int matchScore[MAXSTATION]= {0}; //matchScore = array of weighting scores
     char name[MAXSTATIONNAME];
 
-    int nonSpaceCount=0;
-    for(int i=0; inputString[i]!=0; i++) { //Remove Space In char inputString;
-        if(inputString[i]!=' ') {
-            inputString[nonSpaceCount] = inputString[i];
-            nonSpaceCount++;
-        }
-    }
-    inputString[nonSpaceCount]=0;
-    //printf("%s\n",inputString);
-
     for(int i=0; i<strlen(inputString); i++)
         inputString[i]=toupper(inputString[i]);
 
@@ -347,7 +347,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
             }
         }
 
-        nonSpaceCount=0;
+        int nonSpaceCount=0;
         for(int j=0; name[j]!=0 ; j++) { //Remove Space in name;
             if(name[j]!=' ') {
                 name[nonSpaceCount]=name[j];
@@ -422,39 +422,38 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 
     if(showSearchScore==true) printf("\n\nHighest: %i Second: %i\n",topScore,secScore); //input * at the end, show scores of match[i]
 
-    if(topScore>8) {
+    if(topScore>8 && secScore>0) {
         int resultCount=0;
         for(int i=0; i<MAXSTATION; i++) {
             if(matchScore[i]==topScore) resultCount++;
         }
         printf("\nDo you mean by:\n\n");
-        if(resultCount<2) {
-            for(int i=1; i<MAXSTATION; i++) {
-                if(matchScore[i]==topScore) {
-                    printStationChoose(i);
-                }
-            }
-            if(topScore-secScore<6) {
-                for(int i=1; i<MAXSTATION; i++) {
-                    if(matchScore[i]==secScore) {
-                        printStationChoose(i);
-                    }
-                }
-            }
-        } else {
-            int check[MAXSTATION]= {0}; //check[] stores interchange id
-            for(int i=1; i<MAXSTATION; i++) {
-                if(matchScore[i]==topScore) {
-                    if(st[i].interchange!=0) {
-                        if(check[st[i].interchange]==0) {
-                            check[st[i].interchange]=1;
+
+        int check[MAXSTATION]= {0}; //check[] stores interchange id
+        for(int i=1; i<MAXSTATION; i++) {
+                if(topScore/secScore<1) {
+                    if(matchScore[i]==topScore || matchScore[i]==secScore) {
+                        if(st[i].interchange!=0) {
+                            if(check[st[i].interchange]==0) {
+                                check[st[i].interchange]=1;
+                                printStationChoose(i);
+                            }
+                        } else {
                             printStationChoose(i);
                         }
-                    } else {
-                        printStationChoose(i);
+                    }
+                } else {
+                    if(matchScore[i]==topScore) {
+                        if(st[i].interchange!=0) {
+                            if(check[st[i].interchange]==0) {
+                                check[st[i].interchange]=1;
+                                printStationChoose(i);
+                            }
+                        } else {
+                            printStationChoose(i);
+                        }
                     }
                 }
-            }
         }
 
         int inputC=inputCode();
