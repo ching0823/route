@@ -12,7 +12,7 @@ v1.0 Dijkstra implementation
 #include <windows.h>
 #include <wincon.h>
 
-#define MAXSTATION 135+1
+#define MAXSTATION 137+1
 #define MAXLINE 11+1
 #define MAXLINENAME 50
 #define MAXLINECHNAME 30
