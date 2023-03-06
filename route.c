@@ -701,6 +701,7 @@ void rgbEx() {
     CONSOLE_SCREEN_BUFFER_INFOEX csbi = {sizeof(CONSOLE_SCREEN_BUFFER_INFOEX)};
     GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     memcpy(csbi.ColorTable, colors, sizeof(colors));
+    csbi.srWindow.Bottom=csbi.srWindow.Bottom+1;
     SetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE),&csbi);
     return;
 }
@@ -739,7 +740,6 @@ void main() {
 
     rgbEx();
     rgb(RGBGREY);
-
     termsAndAgreement();
 
     //printStructStation();
