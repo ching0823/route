@@ -1,4 +1,5 @@
 /*
+v2.2 rgb support
 v2.1 Search function bug fixed
 v2.0 Fully functional path finding system
 v1.1 Interchange overhaul
@@ -25,6 +26,11 @@ v1.0 Dijkstra implementation
 #define SEARCHCOUNT 2
 #define DIJKSTRASLOT 0
 
+#define RGBBLACK 0
+#define RGBHIGHLIGHT 13
+#define RGBGREY 14
+#define RGBWHITE 15
+
 struct st_station {
     char name[MAXSTATIONNAME];
     char chineseName[MAXSTATIONCHNAME];
@@ -37,7 +43,7 @@ struct st_line {
     char abbrev[4];
     char name[MAXLINENAME];
     char chineseName[MAXLINECHNAME];
-    //int rgb;
+    long rgb;
 };
 struct st_line line[MAXLINE];
 
@@ -142,9 +148,12 @@ void dijkstraResult() {
         }
         //printf("st[reversePrev[0]].line: %2i\n",st[reversePrev[0]].line);
         //printf("| %3i ",reversePrev[i]);
-        printf("| %-20s | ",st[reversePrev[DIJKSTRASLOT][i]].name);
+        printf("| %3i | ",reversePrev[DIJKSTRASLOT][i]);
+        printColorBlock(st[reversePrev[DIJKSTRASLOT][i]].line);
+        printf(" %-20s | ",st[reversePrev[DIJKSTRASLOT][i]].name);
 
-        printf("%s",st[reversePrev[DIJKSTRASLOT][i]].chineseName);
+        printColorBlock(st[reversePrev[DIJKSTRASLOT][i]].line);
+        printf(" %s",st[reversePrev[DIJKSTRASLOT][i]].chineseName);
         for(int j=strlen(st[reversePrev[DIJKSTRASLOT][i]].chineseName); j<=18; j=j+3) printf("  ");
 
         printf("| %s",line[st[reversePrev[DIJKSTRASLOT][i]].line].chineseName);
@@ -237,20 +246,22 @@ void userInput() {
 }
 
 void printInstructions() {
+    rgb(RGBWHITE);
     printf("\nSelect font MS Gothic in command prompt for best result\n");
-    printf("\n--- Input ID or English name of the station ---\n");
+    rgb(RGBGREY);
+    printf("\n--- Input ");
+    rgb(RGBHIGHLIGHT);
+    printf("ID or English");
+    rgb(RGBGREY);
+    printf(" name of the station ---\n");
     printf("Note: Ambiguous name triggers search function\n");
 }
 
 void registerConfirm(int i) {
-    rgb(14);
-    printf("\n %03i",i);
-    rgb(7);
-    printf(": ");
-    rgb(15);
-    printf("%s",st[i].name);
-    rgb(7);
-    printf(" Is Registered\n");
+    printf("\n %3i : ",i);
+    printColorBlock(st[i].line);
+    printf(" %s %s",st[i].name,st[i].chineseName);
+    printf(" has been selected\n");
     return;
 }
 
@@ -431,68 +442,50 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 
         int check[MAXSTATION]= {0}; //check[] stores interchange id
         for(int i=1; i<MAXSTATION; i++) {
-                if(topScore/secScore<1) {
-                    if(matchScore[i]==topScore || matchScore[i]==secScore) {
-                        if(st[i].interchange!=0) {
-                            if(check[st[i].interchange]==0) {
-                                check[st[i].interchange]=1;
-                                printStationChoose(i);
-                            }
-                        } else {
+            if(topScore/secScore<1) {
+                if(matchScore[i]==topScore || matchScore[i]==secScore) {
+                    if(st[i].interchange!=0) {
+                        if(check[st[i].interchange]==0) {
+                            check[st[i].interchange]=1;
                             printStationChoose(i);
                         }
-                    }
-                } else {
-                    if(matchScore[i]==topScore) {
-                        if(st[i].interchange!=0) {
-                            if(check[st[i].interchange]==0) {
-                                check[st[i].interchange]=1;
-                                printStationChoose(i);
-                            }
-                        } else {
-                            printStationChoose(i);
-                        }
+                    } else {
+                        printStationChoose(i);
                     }
                 }
+            } else {
+                if(matchScore[i]==topScore) {
+                    if(st[i].interchange!=0) {
+                        if(check[st[i].interchange]==0) {
+                            check[st[i].interchange]=1;
+                            printStationChoose(i);
+                        }
+                    } else {
+                        printStationChoose(i);
+                    }
+                }
+            }
         }
 
         printf("\nPlease Select: ");
-        int inputC=inputAndSearch();
+        int input=inputAndSearch();
 
-        if(inputC>0 && inputC<MAXSTATION) {
-            return inputC;
+        if(input>0 && input<MAXSTATION) {
+            return input;
         } else return 0;
     } else {
         return 0;
     }
 }
 
-int inputCode() {
-    printf("\nInput ");
-    printf("ID");
-    printf(" Of Station: ");
-    int i=0;
-    char ch, input[4]= {0};
-    while ((ch=getch())!=EOF && ch!='\n' && ch!='\r') {
-        if (ch==8 && i>0) {
-            printf("\b \b");
-            fflush(stdout);
-            i--;
-        } else if(ch>='0' && ch<='9' && i<sizeof(input)-1) {
-            printf("%c",ch);
-            input[i++]=(char)ch;
-        }
-    }
-    input[i]=0;
-    puts("");
-    return atoi(input);
-}
-
 void printStationChoose(int i) {
-    rgb(14);
-    printf(" %3i",i);
-    rgb(7);
-    printf(": %-20s | %s\n",st[i].name, st[i].chineseName);
+    printf(" %3i| ",i);
+    printColorBlock(st[i].line);
+    printf(" %-20s | ", st[i].name);
+    printColorBlock(st[i].line);
+    printf(" %s ", st[i].chineseName);
+    for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
+    printf("|\n");
     return;
 }
 
@@ -591,6 +584,9 @@ int fileLineInput() {
         strcpy(line[i].name,token);
         token=strtok(NULL,csv);
         strcpy(line[i].chineseName,token);
+        token=strtok(NULL,csv);
+        //printf("%i\n",strtol(token,NULL,16)); //rgb
+        line[i].rgb=strtol(token,NULL,16);
         i++;
     }
     fclose(fp);
@@ -616,11 +612,15 @@ void printStructStation() {
             printf("|\n");
             currentLine=st[i].line;
         }
-        printf("| %3i | %-20s | ", i, st[i].name);
-        printf("%s", st[i].chineseName);
+        printf("| %3i | ", i);
+        printColorBlock(st[i].line);
+        printf(" %-20s | ", st[i].name);
+        printColorBlock(st[i].line);
+        printf(" %s", st[i].chineseName);
         for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
         printf("| %s",line[st[i].line].chineseName);
         for(int j=strlen(line[st[i].line].chineseName); j<=12; j=j+3) printf("  ");
+        //system("pause");
         printf("|\n");
     }
     return;
@@ -654,13 +654,59 @@ void printInterchange() {
     printf("\n");
 }
 
+void printColorBlock(int i){
+    rgb(i);
+    printf("■");
+    rgb(RGBGREY);
+}
+
 void rgb(int color) {  //Set Display Colors
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),color);
     return;
 }
 
+void rgbExTypedef() {
+    typedef struct _CONSOLE_SCREEN_BUFFER_INFOEX {
+        ULONG      cbSize;
+        COORD      dwSize;
+        COORD      dwCursorPosition;
+        WORD       wAttributes;
+        SMALL_RECT srWindow;
+        COORD      dwMaximumWindowSize;
+        WORD       wPopupAttributes;
+        BOOL    bFullscreenSupported;
+        COLORREF   ColorTable[16];
+    } CONSOLE_SCREEN_BUFFER_INFOEX, *PCONSOLE_SCREEN_BUFFER_INFOEX;
+}
+
+void rgbEx() {
+    rgbExTypedef();
+
+    COLORREF colors[16];
+    colors[RGBBLACK]=0x000000;
+    colors[RGBHIGHLIGHT]=RGB(252,211,85);
+    colors[RGBGREY]=0xCCCCCC;
+    colors[RGBWHITE]=0xFFFFFF;
+
+    int r, g, b;
+    for(int i=1; i<MAXLINE; i++) {
+        r = ((line[i].rgb >> 16) & 0xFF);
+        g = ((line[i].rgb >> 8) & 0xFF);
+        b = ((line[i].rgb) & 0xFF);
+
+        colors[i]=RGB(r,g,b);
+    }
+
+    rgb(RGBGREY);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbi = {sizeof(CONSOLE_SCREEN_BUFFER_INFOEX)};
+    GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    memcpy(csbi.ColorTable, colors, sizeof(colors));
+    SetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE),&csbi);
+    return;
+}
+
 void rgbPrintAll() {
-    for(int i=0; i<100; i++) {
+    for(int i=0; i<255; i++) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),i);
         printf("%02i ",i);
     }
@@ -681,7 +727,6 @@ void main() {
     system("chcp 65001");
     system("cls");
     Sleep(50);
-    termsAndAgreement();
 
     int checkFile=0;
     checkFile+=fileGraphInput();
@@ -691,6 +736,11 @@ void main() {
         system("pause>nul");
         exit(0);
     }
+
+    rgbEx();
+    rgb(RGBGREY);
+
+    termsAndAgreement();
 
     //printStructStation();
     //printGraph();
