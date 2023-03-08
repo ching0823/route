@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1678273327 source:c:\users\gogym\documents\c\route\route.c
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+	<stdbool.h>
+	<windows.h>
+	<wincon.h>
+
