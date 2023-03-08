@@ -1,4 +1,5 @@
 /*
+v2.3 Bug fixed on path finding algorithm
 v2.2 rgb support
 v2.1 Search function bug fixed
 v2.0 Fully functional path finding system
@@ -100,13 +101,35 @@ void dijkstra(int ori) {
 }
 
 void checkInterchange() {
-    int tempDist=INF, tempOri, tempDes;
+    int tempDist, tempOri, tempDes;
 
     dijkstra(ori);
 
     if(st[ori].interchange==0 && st[des].interchange==0) return;
 
+    if(st[ori].interchange!=0 && st[des].interchange!=0) { //if both ori and des are interchange, select closest DES first
+        tempDist=INF;
+        for(int i=0; i<MAXSTATION; i++) {
+            for(int j=0; j<MAXSTATION; j++) {
+                if(st[ori].interchange==st[i].interchange) {
+                    dijkstra(i);
+                    if(dist[DIJKSTRASLOT][tempDes]<tempDist) {
+                        tempOri=i;
+                        tempDist=dist[DIJKSTRASLOT][des];
+                    }
+                }
+                if(st[des].interchange==st[j].interchange) {
+                    if(dist[DIJKSTRASLOT][j]<tempDist) {
+                        tempDes=i;
+                        tempDist=dist[DIJKSTRASLOT][i];
+                    }
+                }
+            }
+        }
+    }
+
     if(st[des].interchange!=0) { //check des is interchange, swap between and pick closest
+        tempDist=INF;//if only des is interchange
         for(int i=0; i<MAXSTATION; i++) {
             if(st[des].interchange==st[i].interchange) {
                 if(dist[DIJKSTRASLOT][i]<tempDist) {
@@ -118,8 +141,8 @@ void checkInterchange() {
         des=tempDes;
     }
 
-    tempDist=INF;
     if(st[ori].interchange!=0) { //check ori is interchange, swap between and pick closest
+        tempDist=INF;
         for(int i=0; i<MAXSTATION; i++) {
             if(st[ori].interchange==st[i].interchange) {
                 dijkstra(i);
@@ -148,23 +171,14 @@ void dijkstraResult() {
         }
         //printf("st[reversePrev[0]].line: %2i\n",st[reversePrev[0]].line);
         //printf("| %3i ",reversePrev[i]);
-        printf("| %3i | ",reversePrev[DIJKSTRASLOT][i]);
-        printColorBlock(st[reversePrev[DIJKSTRASLOT][i]].line);
-        printf(" %-20s | ",st[reversePrev[DIJKSTRASLOT][i]].name);
-
-        printColorBlock(st[reversePrev[DIJKSTRASLOT][i]].line);
-        printf(" %s",st[reversePrev[DIJKSTRASLOT][i]].chineseName);
-        for(int j=strlen(st[reversePrev[DIJKSTRASLOT][i]].chineseName); j<=18; j=j+3) printf("  ");
-
-        printf("| %s",line[st[reversePrev[DIJKSTRASLOT][i]].line].chineseName);
-        for(int j=strlen(line[st[reversePrev[DIJKSTRASLOT][i]].line].chineseName); j<=12; j=j+3) printf("  ");
+        printStation(reversePrev[DIJKSTRASLOT][i]);
 
         int check1=0, check2=0, check3=0; //show time needed
         if(currentLine!=st[reversePrev[DIJKSTRASLOT][i+1]].line) check1=1; //last station before interchange, included first station, first st line=0, i=1
         if(currentLine!=st[reversePrev[DIJKSTRASLOT][i-1]].line) check2=1; //first station after interchange
         if(reversePrev[DIJKSTRASLOT][i]==des) check3=1; //
-        if(check1 || check2 || check3) printf("| Time: %3.0f mins ",dist[DIJKSTRASLOT][reversePrev[DIJKSTRASLOT][i]]);
-        printf("|\n");
+        if(check1 || check2 || check3) printf(" Time: %3.0f mins |",dist[DIJKSTRASLOT][reversePrev[DIJKSTRASLOT][i]]);
+        printf("\n");
         i++;
     }
     printf("\n");
@@ -175,13 +189,10 @@ void dijkstraResult() {
 void printFullDijkstra() {
     puts("");
     for(int slot=0; slot<SEARCHCOUNT; slot++) {
+        printf("| Slot: %i |\n",slot);
         for(int i=1; i<MAXSTATION; i++) {
-            printf(" %03i | %-20s | ", i, st[i].name);
-            printf("%s",st[i].chineseName);
-            for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
-            printf(" | prev: %3i | prev: %s",prev[slot][i],st[prev[slot][i]].chineseName);
-            for(int j=strlen(st[prev[slot][i]].chineseName); j<=18; j=j+3) printf("  ");
-            printf("| dist: %5.1f |\n",dist[slot][i]);
+            printStation(i);
+            printf(" Dist: %5.1f |\n",dist[slot][i]);
         }
         puts("");
     }
@@ -251,9 +262,9 @@ void printInstructions() {
     rgb(RGBGREY);
     printf("\n--- Input ");
     rgb(RGBHIGHLIGHT);
-    printf("ID or English");
+    printf("ID or English name");
     rgb(RGBGREY);
-    printf(" name of the station ---\n");
+    printf(" of the station ---\n");
     printf("Note: Ambiguous name triggers search function\n");
 }
 
@@ -478,14 +489,23 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
     }
 }
 
-void printStationChoose(int i) {
-    printf(" %3i| ",i);
+void printStation(int i) {
+    printf("| ID: %-3i | ", i);
     printColorBlock(st[i].line);
     printf(" %-20s | ", st[i].name);
     printColorBlock(st[i].line);
-    printf(" %s ", st[i].chineseName);
+    printf(" %s", st[i].chineseName);
     for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
-    printf("|\n");
+    printf("| %s",line[st[i].line].chineseName);
+    for(int j=strlen(line[st[i].line].chineseName); j<=12; j=j+3) printf("  ");
+    //system("pause");
+    printf("|");
+    return;
+}
+
+void printStationChoose(int i) {
+    printStation(i);
+    printf("\n");
     return;
 }
 
@@ -612,21 +632,14 @@ void printStructStation() {
             printf("|\n");
             currentLine=st[i].line;
         }
-        printf("| %3i | ", i);
-        printColorBlock(st[i].line);
-        printf(" %-20s | ", st[i].name);
-        printColorBlock(st[i].line);
-        printf(" %s", st[i].chineseName);
-        for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
-        printf("| %s",line[st[i].line].chineseName);
-        for(int j=strlen(line[st[i].line].chineseName); j<=12; j=j+3) printf("  ");
+        printStation(i);
         //system("pause");
-        printf("|\n");
+        printf("\n");
     }
     return;
 }
 
-void printLine() {
+void printStructLine() {
     printf("\n");
     for(int i=1; i<MAXLINE; i++) {
         printf("| %2i | %3s | %-30s | ",i,line[i].abbrev,line[i].name);
@@ -654,7 +667,7 @@ void printInterchange() {
     printf("\n");
 }
 
-void printColorBlock(int i){
+void printColorBlock(int i) {
     rgb(i);
     printf("■");
     rgb(RGBGREY);
@@ -720,7 +733,7 @@ void termsAndAgreement() {
     printf("All copyright belongs to MTR.\n");
     printf("\n");
     printf("Press Y to proceed.\n");
-    while (getch()!='y') {}
+    while (toupper(getch())!='Y') {}
     system("cls");
 }
 
@@ -740,12 +753,12 @@ void main() {
 
     rgbEx();
     rgb(RGBGREY);
-    termsAndAgreement();
+    //termsAndAgreement();
 
     //printStructStation();
     //printGraph();
     //printInterchange();
-    //printLine();
+    //printStructLine();
 
     do {
         printStructStation();
