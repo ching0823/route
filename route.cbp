@@ -31,12 +31,12 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="graph.csv" />
-		<Unit filename="line.csv" />
+		<Unit filename="data/graph.csv" />
+		<Unit filename="data/line.csv" />
+		<Unit filename="data/station.csv" />
 		<Unit filename="route.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="station.csv" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
