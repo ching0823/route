@@ -515,7 +515,7 @@ int fileGraphInput() {
     char s[MAXFILESTRING]="";
     char const csv[2]=",";
     char *token;
-    fp=fopen("graph.csv","r");
+    fp=fopen("data/graph.csv","r");
     if(fp==NULL) {
         rgb(79);
         printf("File \"graph.csv\" Not Found\n");
@@ -546,7 +546,7 @@ int fileStationInput() {
     char s[MAXFILESTRING];
     char const csv[2]=",";
     char *token;
-    fp=fopen("station.csv","r");
+    fp=fopen("data/station.csv","r");
     if(fp==NULL) {
         rgb(79);
         printf("File \"station.csv\" Not Found\n");
@@ -582,7 +582,7 @@ int fileLineInput() {
     char s[MAXFILESTRING];
     char const csv[2]=",";
     char *token;
-    fp=fopen("line.csv","r");
+    fp=fopen("data/line.csv","r");
     if(fp==NULL) {
         rgb(79);
         printf("File \"line.csv\" Not Found\n");
