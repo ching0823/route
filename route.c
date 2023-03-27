@@ -33,6 +33,7 @@ v1.0 Dijkstra implementation
 #define RGBWHITE 15
 
 struct st_station {
+    char abbrev[4];
     char name[MAXSTATIONNAME];
     char chineseName[MAXSTATIONCHNAME];
     int line;
@@ -235,6 +236,12 @@ void reverseDijkstra() {
     return;
 }
 
+/*
+void lowestTurnAlogrithm(){
+
+}
+*/
+
 void userInput() {
     ori=des=0;
 
@@ -300,6 +307,15 @@ int inputAndSearch() {
     inputString[i]=0;
     puts("");
 
+    if(strcmp(inputString,"q")==0) { //input "q" = quit program
+        exit(0);
+    }
+
+    if(inputString[i-1]=='*') { //check last digit contains '*'
+        showSearchScore=true;
+        inputString[i-1]=0;
+    }
+
     int nonSpaceCount=0;
     for(int i=0; inputString[i]!=0; i++) { //Remove Space In char inputString;
         if(inputString[i]!=' ') {
@@ -309,15 +325,6 @@ int inputAndSearch() {
     }
     inputString[nonSpaceCount]=0;
     //printf("%s\n",inputString);
-
-    if(strcmp(inputString,"q")==0) { //input "q" = quit program
-        exit(0);
-    }
-
-    if(inputString[i-1]=='*') { //check last digit contains '*'
-        showSearchScore=true;
-        inputString[i-1]=0;
-    }
 
     int checkChar=0;
     for(i=0; i<strlen(inputString); i++) {
@@ -444,7 +451,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 
     if(showSearchScore==true) printf("\n\nHighest: %i Second: %i\n",topScore,secScore); //input * at the end, show scores of match[i]
 
-    if(topScore>8 && secScore>0) {
+    if(topScore>25 && secScore>24) {
         int resultCount=0;
         for(int i=0; i<MAXSTATION; i++) {
             if(matchScore[i]==topScore) resultCount++;
@@ -452,8 +459,8 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         printf("\nDo you mean by:\n\n");
 
         int check[MAXSTATION]= {0}; //check[] stores interchange id
-        for(int i=1; i<MAXSTATION; i++) {
-            if(topScore/secScore<1) {
+        if( (float)topScore / (float)secScore < 1.14) {
+            for(int i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore || matchScore[i]==secScore) {
                     if(st[i].interchange!=0) {
                         if(check[st[i].interchange]==0) {
@@ -464,7 +471,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
                         printStationChoose(i);
                     }
                 }
-            } else {
+            }
+        } else {
+            for(int i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore) {
                     if(st[i].interchange!=0) {
                         if(check[st[i].interchange]==0) {
@@ -490,7 +499,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 }
 
 void printStation(int i) {
-    printf("| ID: %-3i | ", i);
+    printf("| ID: %-3i | %3s | ", i,st[i].abbrev);
     printColorBlock(st[i].line);
     printf(" %-20s | ", st[i].name);
     printColorBlock(st[i].line);
@@ -511,7 +520,7 @@ void printStationChoose(int i) {
 
 int fileGraphInput() {
     FILE *fp;
-    int i,j=0; //file row and col counter
+    int i=0,j=0;  //file row and col counter
     char s[MAXFILESTRING]="";
     char const csv[2]=",";
     char *token;
@@ -667,6 +676,12 @@ void printInterchange() {
     printf("\n");
 }
 
+void printAbbrev(){
+    for(int i=0; i<MAXSTATION; i++){
+        printf("%3s,\n",st[i].abbrev);
+    }
+}
+
 void printColorBlock(int i) {
     rgb(i);
     printf("■");
@@ -719,12 +734,84 @@ void rgbEx() {
     return;
 }
 
+void rgbExDefault() {
+    rgbExTypedef();
+
+    COLORREF colors[16];
+    colors[0]=RGB(12,12,12);
+    colors[1]=RGB(0,55,218);
+    colors[2]=RGB(19,161,14);
+    colors[3]=RGB(58,150,221);
+    colors[4]=RGB(197,15,31);
+    colors[5]=RGB(136,23,152);
+    colors[6]=RGB(193,156,0);
+    colors[7]=RGB(204,204,204);
+    colors[8]=RGB(118,118,118);
+    colors[9]=RGB(59,120,255);
+    colors[10]=RGB(22,198,12);
+    colors[11]=RGB(97,214,214);
+    colors[12]=RGB(231,72,86);
+    colors[13]=RGB(180,0,158);
+    colors[14]=RGB(249,241,165);
+    colors[15]=RGB(242,242,242);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbi = {sizeof(CONSOLE_SCREEN_BUFFER_INFOEX)};
+    GetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    memcpy(csbi.ColorTable, colors, sizeof(colors));
+    csbi.srWindow.Bottom=csbi.srWindow.Bottom+1;
+    SetConsoleScreenBufferInfoEx(GetStdHandle(STD_OUTPUT_HANDLE),&csbi);
+    return;
+}
+
 void rgbPrintAll() {
     for(int i=0; i<255; i++) {
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),i);
         printf("%02i ",i);
     }
     return;
+}
+
+void abbrevInit() {
+    //Exceptions for MTR abbrev
+    strcpy(st[50].abbrev, "TIL");
+    strcpy(st[54].abbrev, "TIL");
+    strcpy(st[70].abbrev, "TWO");
+    strcpy(st[90].abbrev, "TIS");
+    strcpy(st[76].abbrev, "SUN");
+    strcpy(st[115].abbrev, "SUN");
+
+    for(int i=0; i<MAXSTATION; i++) {
+        if(strlen(st[i].abbrev)==0) {
+            int spaceCount=0, spaceFirst=0, spaceSecond=0;
+            char tempName[MAXSTATIONNAME];
+            strcpy(tempName, st[i].name);
+
+            for(int j=0; j<strlen(tempName); j++) {
+                if(tempName[j]==' ') {
+                    spaceCount++;
+                    if(spaceFirst==0) {
+                        spaceFirst=j;
+                    } else if(spaceSecond==0) {
+                        spaceSecond=j;
+                    }
+                }
+                tempName[j] = toupper(tempName[j]);
+            }
+
+            if(spaceCount==0) {
+                strncpy(st[i].abbrev, tempName, 3);
+            }
+            if(spaceCount==1) {
+                strncpy(st[i].abbrev, tempName, 2);
+                st[i].abbrev[2] = tempName[spaceFirst+1];
+            }
+            if(spaceCount>=2) {
+                st[i].abbrev[0] = tempName[0];
+                st[i].abbrev[1] = tempName[spaceFirst+1];
+                st[i].abbrev[2] = tempName[spaceSecond+1];
+            }
+        }
+    }
 }
 
 void termsAndAgreement() {
@@ -735,6 +822,10 @@ void termsAndAgreement() {
     printf("Press Y to proceed.\n");
     while (toupper(getch())!='Y') {}
     system("cls");
+}
+
+void init() {
+    abbrevInit();
 }
 
 void main() {
@@ -751,10 +842,13 @@ void main() {
         exit(0);
     }
 
+    init();
+
     rgbEx();
     rgb(RGBGREY);
     //termsAndAgreement();
 
+    printAbbrev();
     //printStructStation();
     //printGraph();
     //printInterchange();
@@ -767,6 +861,10 @@ void main() {
         //printFullDijkstra();
         reverseDijkstra(); //Reverse the inverted dijkstra result map
         dijkstraResult();
+
+        //lowestTurnAlogrithm();
         system("cls");
     } while(1);
+
+    rgbExDefault();
 }
