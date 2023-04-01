@@ -1,4 +1,5 @@
 /*
+v2.4 abbrev implementation
 v2.3 Bug fixed on path finding algorithm
 v2.2 rgb support
 v2.1 Search function bug fixed
@@ -356,28 +357,28 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
     int matchScore[MAXSTATION]= {0}; //matchScore = array of weighting scores
     char name[MAXSTATIONNAME];
 
-    for(int i=0; i<strlen(inputString); i++)
+    for(int i=0; i<strlen(inputString); i++) //toupper inputString
         inputString[i]=toupper(inputString[i]);
 
-    for(int i=1; i<MAXSTATION; i++) {
+    for(int i=1; i<MAXSTATION; i++) { //Compare and rate inputString in each st[i].name
         matchScore[i]=0;
-        strcpy(name,st[i].name);
+        strcpy(name,st[i].name); //Copy st[i].name to name
 
         for(int j=0; j<strlen(name); j++) { //toupper name
             name[j]=toupper(name[j]);
         }
 
-        for(int j=0; j<strlen(inputString)-2; j++) {
+        for(int j=0; j<strlen(inputString)-2; j++) { //Compare 3 letters consecutively include space, if match +10 score
             for(int k=0; k<strlen(name)-2; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2]) {
-                    matchScore[i]++;
+                    matchScore[i]+=15;
                     break;
                 }
             }
         }
 
         int nonSpaceCount=0;
-        for(int j=0; name[j]!=0 ; j++) { //Remove Space in name;
+        for(int j=0; name[j]!=0 ; j++) { //Remove Space in name
             if(name[j]!=' ') {
                 name[nonSpaceCount]=name[j];
                 nonSpaceCount++;
@@ -386,11 +387,17 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         name[nonSpaceCount]=0;
         //printf("%s\n",name);
 
-        if(strcmp(name,inputString)==0) { //if st[i].name==inputString
+        if(strcmp(name, inputString)==0) { //if st[i].name==inputString, return id
+            return i;
+        }
+        if(strcmp(st[i].abbrev, inputString)==0) {
             return i;
         }
 
-        //Score System
+        /*
+        Main Scoring System
+        */
+
         int alphabetCount[26]= {0};
         for(int j=0; j<strlen(name); j++) {
             alphabetCount[name[j]-65]=1;
@@ -412,7 +419,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         for(int j=0; j<strlen(inputString)-1; j++) {
             for(int k=0; k<strlen(name)-1; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1]) {
-                    matchScore[i]++;
+                    matchScore[i]+=3;
                     break;
                 }
             }
@@ -421,7 +428,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         for(int j=0; j<strlen(inputString)-2; j++) {
             for(int k=0; k<strlen(name)-2; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2]) {
-                    matchScore[i]=matchScore[i]+3;
+                    matchScore[i]+=5;
                     break;
                 }
             }
@@ -430,7 +437,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         for(int j=0; j<strlen(inputString)-3; j++) {
             for(int k=0; k<strlen(name)-3; k++) {
                 if(inputString[j]==name[k] && inputString[j+1]==name[k+1] && inputString[j+2]==name[k+2] && inputString[j+3]==name[k+3]) {
-                    matchScore[i]=matchScore[i]+5;
+                    matchScore[i]+=10;
                     break;
                 }
             }
@@ -451,7 +458,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 
     if(showSearchScore==true) printf("\n\nHighest: %i Second: %i\n",topScore,secScore); //input * at the end, show scores of match[i]
 
-    if(topScore>25 && secScore>24) {
+    if((topScore>25 && secScore>24) || topScore>42) {
         int resultCount=0;
         for(int i=0; i<MAXSTATION; i++) {
             if(matchScore[i]==topScore) resultCount++;
@@ -572,6 +579,8 @@ int fileStationInput() {
         //printf("%s\n",s);
         token=strtok(s,csv);
         //printf("Token:%s\t",token);
+        strcpy(st[i].abbrev,token);
+        token=strtok(NULL,csv);
         strcpy(st[i].name,token);
         token=strtok(NULL,csv);
         strcpy(st[i].chineseName,token);
@@ -678,7 +687,7 @@ void printInterchange() {
 
 void printAbbrev(){
     for(int i=0; i<MAXSTATION; i++){
-        printf("%3s,\n",st[i].abbrev);
+        printf("%3s\n",st[i].abbrev);
     }
 }
 
@@ -771,6 +780,7 @@ void rgbPrintAll() {
     return;
 }
 
+/*
 void abbrevInit() {
     //Exceptions for MTR abbrev
     strcpy(st[50].abbrev, "TIL");
@@ -813,6 +823,7 @@ void abbrevInit() {
         }
     }
 }
+*/
 
 void termsAndAgreement() {
     printf("\n");
@@ -825,7 +836,7 @@ void termsAndAgreement() {
 }
 
 void init() {
-    abbrevInit();
+    //abbrevInit();
 }
 
 void main() {
@@ -848,7 +859,7 @@ void main() {
     rgb(RGBGREY);
     //termsAndAgreement();
 
-    printAbbrev();
+    //printAbbrev();
     //printStructStation();
     //printGraph();
     //printInterchange();

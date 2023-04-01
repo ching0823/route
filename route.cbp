@@ -3,21 +3,14 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title="route" />
+		<Option platforms="Windows;" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
-			<Target title="Debug">
-				<Option output="bin/Debug/route" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Debug/" />
-				<Option type="1" />
-				<Option compiler="gcc" />
-				<Compiler>
-					<Add option="-g" />
-				</Compiler>
-			</Target>
 			<Target title="Release">
-				<Option output="bin/Release/route" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/Release/" />
+				<Option output="route" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../route" />
+				<Option object_output="../route" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -31,9 +24,15 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="data/graph.csv" />
-		<Unit filename="data/line.csv" />
-		<Unit filename="data/station.csv" />
+		<Unit filename="data/graph.csv">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="data/line.csv">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="data/station.csv">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="route.c">
 			<Option compilerVar="CC" />
 		</Unit>
