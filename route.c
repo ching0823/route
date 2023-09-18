@@ -40,7 +40,7 @@ struct st_station {
     int line;
     int interchange;
 };
-struct st_station st[MAXSTATION];
+struct st_station station[MAXSTATION];
 
 struct st_line {
     char abbrev[4];
@@ -102,25 +102,25 @@ void dijkstra(int ori) {
     return;
 }
 
-void checkInterchange() {
+void checkInterchangeAndDijkstra() {
     int tempDist, tempOri, tempDes;
 
     dijkstra(ori);
 
-    if(st[ori].interchange==0 && st[des].interchange==0) return;
+    if(station[ori].interchange==0 && station[des].interchange==0) return;
 
-    if(st[ori].interchange!=0 && st[des].interchange!=0) { //if both ori and des are interchange, select closest DES first
+    if(station[ori].interchange!=0 && station[des].interchange!=0) { //if both ori and des are interchange, select closest DES first
         tempDist=INF;
         for(int i=0; i<MAXSTATION; i++) {
             for(int j=0; j<MAXSTATION; j++) {
-                if(st[ori].interchange==st[i].interchange) {
+                if(station[ori].interchange==station[i].interchange) {
                     dijkstra(i);
                     if(dist[DIJKSTRASLOT][tempDes]<tempDist) {
                         tempOri=i;
                         tempDist=dist[DIJKSTRASLOT][des];
                     }
                 }
-                if(st[des].interchange==st[j].interchange) {
+                if(station[des].interchange==station[j].interchange) {
                     if(dist[DIJKSTRASLOT][j]<tempDist) {
                         tempDes=i;
                         tempDist=dist[DIJKSTRASLOT][i];
@@ -130,10 +130,10 @@ void checkInterchange() {
         }
     }
 
-    if(st[des].interchange!=0) { //check des is interchange, swap between and pick closest
+    if(station[des].interchange!=0) { //check des is interchange, swap between and pick closest
         tempDist=INF;//if only des is interchange
         for(int i=0; i<MAXSTATION; i++) {
-            if(st[des].interchange==st[i].interchange) {
+            if(station[des].interchange==station[i].interchange) {
                 if(dist[DIJKSTRASLOT][i]<tempDist) {
                     tempDes=i;
                     tempDist=dist[DIJKSTRASLOT][i];
@@ -143,10 +143,10 @@ void checkInterchange() {
         des=tempDes;
     }
 
-    if(st[ori].interchange!=0) { //check ori is interchange, swap between and pick closest
+    if(station[ori].interchange!=0) { //check ori is interchange, swap between and pick closest
         tempDist=INF;
         for(int i=0; i<MAXSTATION; i++) {
-            if(st[ori].interchange==st[i].interchange) {
+            if(station[ori].interchange==station[i].interchange) {
                 dijkstra(i);
                 if(dist[DIJKSTRASLOT][des]<tempDist) {
                     tempOri=i;
@@ -157,27 +157,28 @@ void checkInterchange() {
         ori=tempOri;
     }
 
-    dijkstra(ori);
+    dijkstra(ori); //run again with new closest ori and des
 
     return;
 }
 
 void dijkstraResult() {
     int i=1;
-    int currentLine=st[reversePrev[DIJKSTRASLOT][i]].line;
+    int currentLine=station[reversePrev[DIJKSTRASLOT][i]].line;
+
     printf("\n");
     while(reversePrev[DIJKSTRASLOT][i]>0) {
-        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i]].line) {
+        if(currentLine!=station[reversePrev[DIJKSTRASLOT][i]].line) {
             printf("\n");
-            currentLine=st[reversePrev[DIJKSTRASLOT][i]].line;
+            currentLine=station[reversePrev[DIJKSTRASLOT][i]].line;
         }
-        //printf("st[reversePrev[0]].line: %2i\n",st[reversePrev[0]].line);
+        //printf("station[reversePrev[0]].line: %2i\n",station[reversePrev[0]].line);
         //printf("| %3i ",reversePrev[i]);
-        printStation(reversePrev[DIJKSTRASLOT][i]);
+        printStationWithoutId(reversePrev[DIJKSTRASLOT][i]); //print results
 
         int check1=0, check2=0, check3=0; //show time needed
-        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i+1]].line) check1=1; //last station before interchange, included first station, first st line=0, i=1
-        if(currentLine!=st[reversePrev[DIJKSTRASLOT][i-1]].line) check2=1; //first station after interchange
+        if(currentLine!=station[reversePrev[DIJKSTRASLOT][i+1]].line) check1=1; //last station before interchange, included first station, first st line=0, i=1
+        if(currentLine!=station[reversePrev[DIJKSTRASLOT][i-1]].line) check2=1; //first station after interchange
         if(reversePrev[DIJKSTRASLOT][i]==des) check3=1; //
         if(check1 || check2 || check3) printf(" Time: %3.0f mins |",dist[DIJKSTRASLOT][reversePrev[DIJKSTRASLOT][i]]);
         printf("\n");
@@ -210,12 +211,12 @@ void reverseDijkstra() {
     }
     int count=0;
     prevTemp[count]=prev[DIJKSTRASLOT][des];
-    //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count]].name);
+    //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],station[prevTemp[count]].name);
     count++;
 
     while(prevTemp[count-1]>0) {
         prevTemp[count] = prev[DIJKSTRASLOT][prevTemp[count-1]];
-        //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],st[prevTemp[count-1]].name);
+        //printf("prevTemp[count]=%3i | %-20s \n",prevTemp[count],station[prevTemp[count-1]].name);
         count++;
     }
     for(int i=1; i<count; i++) {
@@ -227,9 +228,9 @@ void reverseDijkstra() {
 
     //Print prevTemp[];
     /*
-    printf("Destination: %3i | %-20s \n",des,st[des].name);
+    printf("Destination: %3i | %-20s \n",des,station[des].name);
     for(int i=0; i<count; i++){
-        printf("prevTemp[%2i]=%3i | %-20s \n",i,prevTemp[i],st[prevTemp[i]].name);
+        printf("prevTemp[%2i]=%3i | %-20s \n",i,prevTemp[i],station[prevTemp[i]].name);
     }
     system("pause");
     */
@@ -238,7 +239,7 @@ void reverseDijkstra() {
 }
 
 /*
-void lowestTurnAlogrithm(){
+void lowestTurnAlgorithm(){
 
 }
 */
@@ -278,8 +279,8 @@ void printInstructions() {
 
 void registerConfirm(int i) {
     printf("\n %3i : ",i);
-    printColorBlock(st[i].line);
-    printf(" %s %s",st[i].name,st[i].chineseName);
+    printColorBlock(station[i].line);
+    printf(" %s %s",station[i].name,station[i].chineseName);
     printf(" has been selected\n");
     return;
 }
@@ -360,9 +361,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
     for(int i=0; i<strlen(inputString); i++) //toupper inputString
         inputString[i]=toupper(inputString[i]);
 
-    for(int i=1; i<MAXSTATION; i++) { //Compare and rate inputString in each st[i].name
+    for(int i=1; i<MAXSTATION; i++) { //Compare and rate inputString in each station[i].name
         matchScore[i]=0;
-        strcpy(name,st[i].name); //Copy st[i].name to name
+        strcpy(name,station[i].name); //Copy station[i].name to name
 
         for(int j=0; j<strlen(name); j++) { //toupper name
             name[j]=toupper(name[j]);
@@ -387,10 +388,10 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         name[nonSpaceCount]=0;
         //printf("%s\n",name);
 
-        if(strcmp(name, inputString)==0) { //if st[i].name==inputString, return id
+        if(strcmp(name, inputString)==0) { //if station[i].name==inputString, return id
             return i;
         }
-        if(strcmp(st[i].abbrev, inputString)==0) {
+        if(strcmp(station[i].abbrev, inputString)==0) {
             return i;
         }
 
@@ -443,7 +444,7 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
             }
         }
 
-        if(showSearchScore==true) printf("\nS:%02i %s %i",i,st[i].name,matchScore[i]); //input * at the end, show scores of match[i]
+        if(showSearchScore==true) printf("\nS:%02i %s %i",i,station[i].name,matchScore[i]); //input * at the end, show scores of match[i]
     }
 
     int topScore=0, secScore=0;
@@ -469,9 +470,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         if( (float)topScore / (float)secScore < 1.14) {
             for(int i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore || matchScore[i]==secScore) {
-                    if(st[i].interchange!=0) {
-                        if(check[st[i].interchange]==0) {
-                            check[st[i].interchange]=1;
+                    if(station[i].interchange!=0) {
+                        if(check[station[i].interchange]==0) {
+                            check[station[i].interchange]=1;
                             printStationChoose(i);
                         }
                     } else {
@@ -482,9 +483,9 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
         } else {
             for(int i=1; i<MAXSTATION; i++) {
                 if(matchScore[i]==topScore) {
-                    if(st[i].interchange!=0) {
-                        if(check[st[i].interchange]==0) {
-                            check[st[i].interchange]=1;
+                    if(station[i].interchange!=0) {
+                        if(check[station[i].interchange]==0) {
+                            check[station[i].interchange]=1;
                             printStationChoose(i);
                         }
                     } else {
@@ -506,14 +507,28 @@ int identifyStation(char inputString[MAXSTATIONNAME]) {
 }
 
 void printStation(int i) {
-    printf("| ID: %-3i | %3s | ", i,st[i].abbrev);
-    printColorBlock(st[i].line);
-    printf(" %-20s | ", st[i].name);
-    printColorBlock(st[i].line);
-    printf(" %s", st[i].chineseName);
-    for(int j=strlen(st[i].chineseName); j<=18; j=j+3) printf("  ");
-    printf("| %s",line[st[i].line].chineseName);
-    for(int j=strlen(line[st[i].line].chineseName); j<=12; j=j+3) printf("  ");
+    printf("| ID: %-3i | %3s | ", i,station[i].abbrev);
+    printColorBlock(station[i].line);
+    printf(" %-20s | ", station[i].name);
+    printColorBlock(station[i].line);
+    printf(" %s", station[i].chineseName);
+    for(int j=strlen(station[i].chineseName); j<=18; j=j+3) printf("  ");
+    printf("| %s",line[station[i].line].chineseName);
+    for(int j=strlen(line[station[i].line].chineseName); j<=12; j=j+3) printf("  ");
+    //system("pause");
+    printf("|");
+    return;
+}
+
+void printStationWithoutId(int i) {
+    printf("| ");
+    printColorBlock(station[i].line);
+    printf(" %-20s | ", station[i].name);
+    printColorBlock(station[i].line);
+    printf(" %s", station[i].chineseName);
+    for(int j=strlen(station[i].chineseName); j<=18; j=j+3) printf("  ");
+    printf("| %s",line[station[i].line].chineseName);
+    for(int j=strlen(line[station[i].line].chineseName); j<=12; j=j+3) printf("  ");
     //system("pause");
     printf("|");
     return;
@@ -579,15 +594,15 @@ int fileStationInput() {
         //printf("%s\n",s);
         token=strtok(s,csv);
         //printf("Token:%s\t",token);
-        strcpy(st[i].abbrev,token);
+        strcpy(station[i].abbrev,token);
         token=strtok(NULL,csv);
-        strcpy(st[i].name,token);
+        strcpy(station[i].name,token);
         token=strtok(NULL,csv);
-        strcpy(st[i].chineseName,token);
+        strcpy(station[i].chineseName,token);
         token=strtok(NULL,csv);
-        st[i].line=atoi(token);
+        station[i].line=atoi(token);
         token=strtok(NULL,csv);
-        st[i].interchange=atoi(token);
+        station[i].interchange=atoi(token);
         i++;
     }
     fclose(fp);
@@ -646,9 +661,9 @@ void printStructStation() {
     int currentLine=1;
     printf("\n");
     for(int i=1; i<MAXSTATION; i++) {
-        if(st[i].line!=currentLine) {
+        if(station[i].line!=currentLine) {
             printf("|\n");
-            currentLine=st[i].line;
+            currentLine=station[i].line;
         }
         printStation(i);
         //system("pause");
@@ -670,16 +685,16 @@ void printStructLine() {
 
 void printInterchange() {
     printf("\n");
-    for(int i=1; i<MAXSTATION; i++) printf("| %03i | %02i |\n", i, st[i].interchange);
+    for(int i=1; i<MAXSTATION; i++) printf("| %03i | %02i |\n", i, station[i].interchange);
     printf("\n");
 
     int check[30]= {0};
     printf("\n");
     for(int i=1; i<MAXSTATION; i++) {
-        if(st[i].interchange>0)
-            if(check[st[i].interchange]==0) {
-                printf("| %2i | %-30s \n",st[i].interchange,st[i].name);
-                check[st[i].interchange]=1;
+        if(station[i].interchange>0)
+            if(check[station[i].interchange]==0) {
+                printf("| %2i | %-30s \n",station[i].interchange,station[i].name);
+                check[station[i].interchange]=1;
             }
     }
     printf("\n");
@@ -687,7 +702,7 @@ void printInterchange() {
 
 void printAbbrev(){
     for(int i=0; i<MAXSTATION; i++){
-        printf("%3s\n",st[i].abbrev);
+        printf("%3s\n",station[i].abbrev);
     }
 }
 
@@ -783,18 +798,18 @@ void rgbPrintAll() {
 /*
 void abbrevInit() {
     //Exceptions for MTR abbrev
-    strcpy(st[50].abbrev, "TIL");
-    strcpy(st[54].abbrev, "TIL");
-    strcpy(st[70].abbrev, "TWO");
-    strcpy(st[90].abbrev, "TIS");
-    strcpy(st[76].abbrev, "SUN");
-    strcpy(st[115].abbrev, "SUN");
+    strcpy(station[50].abbrev, "TIL");
+    strcpy(station[54].abbrev, "TIL");
+    strcpy(station[70].abbrev, "TWO");
+    strcpy(station[90].abbrev, "TIS");
+    strcpy(station[76].abbrev, "SUN");
+    strcpy(station[115].abbrev, "SUN");
 
     for(int i=0; i<MAXSTATION; i++) {
-        if(strlen(st[i].abbrev)==0) {
+        if(strlen(station[i].abbrev)==0) {
             int spaceCount=0, spaceFirst=0, spaceSecond=0;
             char tempName[MAXSTATIONNAME];
-            strcpy(tempName, st[i].name);
+            strcpy(tempName, station[i].name);
 
             for(int j=0; j<strlen(tempName); j++) {
                 if(tempName[j]==' ') {
@@ -809,16 +824,16 @@ void abbrevInit() {
             }
 
             if(spaceCount==0) {
-                strncpy(st[i].abbrev, tempName, 3);
+                strncpy(station[i].abbrev, tempName, 3);
             }
             if(spaceCount==1) {
-                strncpy(st[i].abbrev, tempName, 2);
-                st[i].abbrev[2] = tempName[spaceFirst+1];
+                strncpy(station[i].abbrev, tempName, 2);
+                station[i].abbrev[2] = tempName[spaceFirst+1];
             }
             if(spaceCount>=2) {
-                st[i].abbrev[0] = tempName[0];
-                st[i].abbrev[1] = tempName[spaceFirst+1];
-                st[i].abbrev[2] = tempName[spaceSecond+1];
+                station[i].abbrev[0] = tempName[0];
+                station[i].abbrev[1] = tempName[spaceFirst+1];
+                station[i].abbrev[2] = tempName[spaceSecond+1];
             }
         }
     }
@@ -868,7 +883,7 @@ void main() {
     do {
         printStructStation();
         userInput();
-        checkInterchange();
+        checkInterchangeAndDijkstra();
         //printFullDijkstra();
         reverseDijkstra(); //Reverse the inverted dijkstra result map
         dijkstraResult();
